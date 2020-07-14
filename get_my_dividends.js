@@ -64,7 +64,7 @@ function get_sheet_object(sheet_name) {
 function get_stock_history(token, ticker) {
   url = "https://globalhistorical.xignite.com/v3/xGlobalHistorical.json/GetCashDividendHistory?"
         + "IdentifierType=Symbol&Identifier=" + ticker
-        + "&StartDate=01/01/2000&EndDate=12/30/2022&"
+        + "&StartDate=01/01/2007&EndDate=12/30/2029&"
         + "IdentifierAsOfDate=&CorporateActionsAdjusted=true&_token="
         + token._token + "&_token_userid=" + token._token_userid
 
@@ -133,12 +133,16 @@ function calculate_dividend_increase(current_dividend, previous_dividend) {
 
 function get_default_last_dividend_payment(all_dividends) {
   if(all_dividends.length == 1) {
-    all_dividends[0] = all_dividends[0].PercentIncrease = 0;
-    all_dividends[0] = all_dividends[0].PreviousDividendAmount = 0;
+    Logger.log("Only one dividend exists:");
+    Logger.log(all_dividends);
+    all_dividends[0].PercentIncrease = all_dividends[0].PercentIncrease = 0;
+    all_dividends[0].PreviousDividendAmount = all_dividends[0].PreviousDividendAmount = 0;
     all_dividends[0].AnnualPayout = calculate_annual_payout(all_dividends[0].DividendAmount, all_dividends[0].PaymentFrequency);
     return all_dividends[0]
   }
 
+  Logger.log("Calculating for default dividend:");
+  Logger.log(all_dividends[0]);
   default_dividend = calculate_dividend_increase(all_dividends[0], all_dividends[1])
   default_dividend.AnnualPayout = calculate_annual_payout(default_dividend.DividendAmount, default_dividend.PaymentFrequency);
 
