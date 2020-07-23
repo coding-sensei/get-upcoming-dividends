@@ -26,6 +26,9 @@ function get_upcoming_dividends(tickers) {
   for (var i= 0; i < tickers.length; i++) {
     Logger.log("Ticker: " + tickers[i]);
     var ticker_data = get_stock_history(token, tickers[i]);
+    if(ticker_data.CashDividends.length == 0) {
+      continue
+    }
     var ticker_next_payments = get_ticker_next_payments(ticker_data);
     tickers_with_payments = tickers_with_payments.concat(ticker_next_payments);
 
@@ -61,7 +64,7 @@ function get_sheet_object(sheet_name) {
 function get_stock_history(token, ticker) {
   url = "https://globalhistorical.xignite.com/v3/xGlobalHistorical.json/GetCashDividendHistory?"
         + "IdentifierType=Symbol&Identifier=" + ticker
-        + "&StartDate=01/01/2000&EndDate=12/30/2022&"
+        + "&StartDate=01/01/2007&EndDate=12/30/2029&"
         + "IdentifierAsOfDate=&CorporateActionsAdjusted=true&_token="
         + token._token + "&_token_userid=" + token._token_userid
 
@@ -93,10 +96,15 @@ function get_ticker_next_payments(ticker_data) {
       Logger.log("Inside If");
       dividends[i] = calculate_dividend_increase(dividends[i], dividends[i+1])
       dividends[i].AnnualPayout = dividends[i].DividendAmount * 4
+      dividends[i].AnnualPayout = calculate_annual_payout(dividends[i].DividendAmount, dividends[i].PaymentFrequency);
       payments.push(dividends[i]);
     }
   }
   Logger.log("payments: " + payments);
+  if(payments.length == 0) {
+    Logger.log("Adding default payment!");
+    payments.push(get_default_last_dividend_payment(dividends));
+  }
   ticker_data.CashDividends = payments;
   return ticker_data
 }
@@ -121,6 +129,38 @@ function calculate_dividend_increase(current_dividend, previous_dividend) {
   current_dividend.PercentIncrease = raise;
 
   return current_dividend
+}
+
+function get_default_last_dividend_payment(all_dividends) {
+  if(all_dividends.length == 1) {
+    Logger.log("Only one dividend exists:");
+    Logger.log(all_dividends);
+    all_dividends[0].PercentIncrease = all_dividends[0].PercentIncrease = 0;
+    all_dividends[0].PreviousDividendAmount = all_dividends[0].PreviousDividendAmount = 0;
+    all_dividends[0].AnnualPayout = calculate_annual_payout(all_dividends[0].DividendAmount, all_dividends[0].PaymentFrequency);
+    return all_dividends[0]
+  }
+
+  Logger.log("Calculating for default dividend:");
+  Logger.log(all_dividends[0]);
+  default_dividend = calculate_dividend_increase(all_dividends[0], all_dividends[1])
+  default_dividend.AnnualPayout = calculate_annual_payout(default_dividend.DividendAmount, default_dividend.PaymentFrequency);
+
+  return default_dividend
+}
+
+function calculate_annual_payout(dividend_amount, frequency) {
+  if(frequency == "Annual") {
+    return dividend_amount
+  } else if(frequency == "SemiAnnual") {
+    return (dividend_amount * 2)
+  } else if(frequency == "Quarterly") {
+    return (dividend_amount * 4)
+  } else if(frequency == "Monthly") {
+    return (dividend_amount * 12)
+  } else {
+    return 0
+  }
 }
 
 function write_to_sheet(json) {
