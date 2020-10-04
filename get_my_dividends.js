@@ -124,7 +124,7 @@ function calculate_dividend_increase(current_dividend, previous_dividend) {
      return current_dividend
   }
 
-  var raise = 1 - previous_dividend.DividendAmount/current_dividend.DividendAmount;
+  var raise = current_dividend.DividendAmount/previous_dividend.DividendAmount - 1;
   current_dividend.PreviousDividendAmount = previous_dividend.DividendAmount;
   current_dividend.PercentIncrease = raise;
 
